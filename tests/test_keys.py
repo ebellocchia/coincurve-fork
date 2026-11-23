@@ -178,6 +178,12 @@ class TestXonlyPubKey:
         with pytest.raises(ValueError, match=r"The public key could not be parsed or is invalid\."):
             PublicKeyXOnly(samples["X_ONLY_PUBKEY_INVALID"])
 
+        # Must be 32 bytes
+        with pytest.raises(ValueError, match=r"X-only public key must be 32 bytes long\."):
+            PublicKeyXOnly(samples["X_ONLY_PUBKEY"][:31])
+        with pytest.raises(ValueError, match=r"X-only public key must be 32 bytes long\."):
+            PublicKeyXOnly(samples["X_ONLY_PUBKEY"] + b"\x00")
+
     def test_roundtrip(self, samples):
         assert PublicKeyXOnly(samples["X_ONLY_PUBKEY"]).format() == samples["X_ONLY_PUBKEY"]
         assert PublicKeyXOnly(samples["PUBLIC_KEY_COMPRESSED"][1:]).format() == samples["PUBLIC_KEY_COMPRESSED"][1:]

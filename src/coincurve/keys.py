@@ -648,6 +648,11 @@ class PublicKeyXOnly:
         if not isinstance(data, bytes):
             self.public_key = data
         else:
+            # The library always reads 32 bytes, so shorter data would be read out of bounds
+            if len(data) != 32:  # noqa: PLR2004
+                msg = "X-only public key must be 32 bytes long."
+                raise ValueError(msg)
+
             public_key = ffi.new("secp256k1_xonly_pubkey *")
             parsed = lib.secp256k1_xonly_pubkey_parse(context.ctx, public_key, data)
             if not parsed:
