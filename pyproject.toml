@@ -8,7 +8,7 @@ requires = [
 ]
 
 [project]
-name = "coincurve"
+name = "coincurve-fork"
 authors = [
     { name = "Ofek Lev", email = "oss@ofek.dev" },
 ]
@@ -50,11 +50,14 @@ Homepage = "https://ofek.dev/coincurve/"
 Sponsor = "https://github.com/sponsors/ofek"
 History = "https://ofek.dev/coincurve/history/"
 Tracker = "https://github.com/ofek/coincurve/issues"
-Source = "https://github.com/ofek/coincurve"
+Source = "https://github.com/ebellocchia/coincurve-fork"
 
 # --- hatch ---
 [tool.hatch.version]
 path = "src/coincurve/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/coincurve"]
 
 [tool.hatch.build.targets.wheel.hooks.custom]
 

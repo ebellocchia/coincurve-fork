@@ -44,7 +44,8 @@ add_subdirectory(cm_library_c_binding)
 add_subdirectory(cm_python_module)
 
 # Configure installation of the extension in the package.
-set(PROJECT_PACKAGE_DIR ${SKBUILD_PLATLIB_DIR}/${SKBUILD_PROJECT_NAME})
+# The import package is always coincurve, regardless of the distribution name.
+set(PROJECT_PACKAGE_DIR ${SKBUILD_PLATLIB_DIR}/coincurve)
 install(TARGETS ${CFFI_OUTPUT_LIBRARY} LIBRARY DESTINATION ${PROJECT_PACKAGE_DIR})
 
 # A dynamically linked vendored libsecp256k1 must survive the temporary build

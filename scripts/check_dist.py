@@ -41,7 +41,7 @@ def classify_platform(platform: str) -> str:
 
 def classify_wheel(wheel: Path, version: str) -> tuple[str, str]:
     distribution, python_tag, abi_tag, platform = wheel.stem.rsplit("-", 3)
-    expected_distribution = f"coincurve-{version}"
+    expected_distribution = f"coincurve_fork-{version}"
     if distribution != expected_distribution:
         message = f"Expected wheel for {expected_distribution}, found: {wheel.name}"
         raise ValueError(message)
@@ -63,7 +63,7 @@ def check_distribution(directory: Path) -> None:
         raise RuntimeError(message)
 
     sdist_name = sdists[0].name
-    sdist_prefix = "coincurve-"
+    sdist_prefix = "coincurve_fork-"
     sdist_suffix = ".tar.gz"
     if not sdist_name.startswith(sdist_prefix) or not sdist_name.endswith(sdist_suffix):
         message = f"Unexpected source distribution name: {sdist_name}"
