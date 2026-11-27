@@ -4,6 +4,7 @@ from os import urandom
 
 import pytest
 
+from coincurve.der import OBJECT_IDENTIFIER_TAG, SECP256K1_OID
 from coincurve.ecdsa import deserialize_recoverable, recover
 from coincurve.keys import PrivateKey, PublicKey, PublicKeyXOnly
 from coincurve.utils import GROUP_ORDER_INT, bytes_to_int, int_to_bytes_padded, verify_signature
@@ -112,6 +113,22 @@ class TestPrivateKey:
             for b in (0x00, 0x01, 0x02, 0x7F, 0x80, 0x81, 0x82, 0x84, 0xFF):
                 with suppress(ValueError):
                     PrivateKey.from_der(der[:i] + bytes([b]) + der[i + 1 :])
+
+    def test_from_der_wrong_curve(self, samples):
+        der = samples["PRIVATE_KEY_DER"]
+        curve_oid = bytes([OBJECT_IDENTIFIER_TAG, len(SECP256K1_OID)]) + SECP256K1_OID
+        assert der.count(curve_oid) == 1
+
+        # Same structure, but for secp384r1 (1.3.132.0.34)
+        with pytest.raises(ValueError, match=r"Not a secp256k1 private key"):
+            PrivateKey.from_der(der.replace(SECP256K1_OID, bytes([0x2B, 0x81, 0x04, 0x00, 0x22])))
+
+        # Algorithm identifier without the curve OID
+        no_curve = bytearray(der.replace(curve_oid, b""))
+        no_curve[2] -= len(curve_oid)  # Outer SEQUENCE length
+        no_curve[7] -= len(curve_oid)  # Algorithm identifier SEQUENCE length
+        with pytest.raises(ValueError, match=r"expected OBJECT IDENTIFIER tag for curve"):
+            PrivateKey.from_der(bytes(no_curve))
 
     def test_ecdh(self):
         a = PrivateKey()

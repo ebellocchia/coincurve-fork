@@ -240,6 +240,19 @@ def decode_der(der_data: bytes) -> bytes:
     if oid_len != len(EC_PUBKEY_OID) or algorithm_oid != EC_PUBKEY_OID:
         msg = "Not an EC private key"
         raise ValueError(msg)
+    offset += oid_len
+
+    # Check if the curve is secp256k1
+    if offset >= alg_end or der_data[offset] != OBJECT_IDENTIFIER_TAG:
+        msg = "Invalid DER: expected OBJECT IDENTIFIER tag for curve"
+        raise ValueError(msg)
+    offset += 1
+    curve_oid_len, offset = decode_length(der_data, offset)
+    curve_oid = der_data[offset : offset + curve_oid_len]
+
+    if offset + curve_oid_len > alg_end or curve_oid != SECP256K1_OID:
+        msg = "Not a secp256k1 private key"
+        raise ValueError(msg)
 
     # Skip to the end of algorithm identifier section
     offset = alg_end
