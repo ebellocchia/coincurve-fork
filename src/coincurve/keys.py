@@ -473,8 +473,13 @@ class PublicKey:
             The combined public key.
 
         Raises:
-            ValueError: If the sum of the public keys was invalid.
+            ValueError: If no public keys were given or the sum of the public keys was invalid.
         """
+        # libsecp256k1 aborts the process on an empty list
+        if not public_keys:
+            msg = "At least one public key is required."
+            raise ValueError(msg)
+
         public_key = ffi.new("secp256k1_pubkey *")
 
         combined = lib.secp256k1_ec_pubkey_combine(

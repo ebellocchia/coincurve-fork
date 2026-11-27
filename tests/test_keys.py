@@ -167,6 +167,10 @@ class TestPublicKey:
 
         assert PublicKey.combine_keys([a, b]) == a.combine([b])
 
+    def test_combine_empty(self):
+        with pytest.raises(ValueError, match=r"At least one public key is required\."):
+            PublicKey.combine_keys([])
+
 
 class TestXonlyPubKey:
     def test_parse_invalid(self, samples):
