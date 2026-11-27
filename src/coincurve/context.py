@@ -22,9 +22,17 @@ class Context:
     def reseed(self, seed: bytes | None = None):
         """
         Protects against certain possible future side-channel timing attacks.
+
+        Raises:
+            ValueError: If the seed is not 32 bytes long.
         """
+        if seed is None:
+            seed = urandom(32)
+        elif len(seed) != 32:  # noqa: PLR2004
+            msg = "Seed must be 32 bytes long."
+            raise ValueError(msg)
+
         with self._lock:
-            seed = urandom(32) if not seed or len(seed) != 32 else seed  # noqa: PLR2004
             res = lib.secp256k1_context_randomize(self.ctx, ffi.new("unsigned char [32]", seed))
             if not res:
                 msg = "secp256k1_context_randomize"
