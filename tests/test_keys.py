@@ -1,3 +1,4 @@
+from contextlib import suppress
 from hashlib import sha512
 from os import urandom
 
@@ -93,6 +94,24 @@ class TestPrivateKey:
 
     def test_from_der(self, samples):
         assert PrivateKey.from_der(samples["PRIVATE_KEY_DER"]).secret == samples["PRIVATE_KEY_BYTES"]
+
+    def test_from_der_malformed(self, samples):
+        der = samples["PRIVATE_KEY_DER"]
+
+        # Long-form length pointing past the end of the data
+        with pytest.raises(ValueError, match="Invalid DER"):
+            PrivateKey.from_der(b"\x30\xfe" + b"\x00" * 64)
+
+        # Every truncation must be rejected
+        for i in range(len(der)):
+            with pytest.raises(ValueError, match="Invalid DER"):
+                PrivateKey.from_der(der[:i])
+
+        # Replacing any byte with a length/tag edge case must either decode or raise ValueError
+        for i in range(len(der)):
+            for b in (0x00, 0x01, 0x02, 0x7F, 0x80, 0x81, 0x82, 0x84, 0xFF):
+                with suppress(ValueError):
+                    PrivateKey.from_der(der[:i] + bytes([b]) + der[i + 1 :])
 
     def test_ecdh(self):
         a = PrivateKey()

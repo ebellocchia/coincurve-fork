@@ -161,20 +161,33 @@ def decode_length(data: bytes, offset: int) -> tuple[int, int]:
 
     Returns:
         Tuple of (length, new_offset)
+
+    Raises:
+        ValueError: If the length field is truncated or the length exceeds the data.
     """
+    if offset >= len(data):
+        msg = "Invalid DER: truncated length field"
+        raise ValueError(msg)
     length_byte = data[offset]
     offset += 1
 
     # Short form
     if length_byte < 128:  # noqa: PLR2004
-        return length_byte, offset
-
+        length = length_byte
     # Long form
-    num_length_bytes = length_byte & 0x7F
-    length = 0
-    for _ in range(num_length_bytes):
-        length = (length << 8) | data[offset]
-        offset += 1
+    else:
+        num_length_bytes = length_byte & 0x7F
+        if offset + num_length_bytes > len(data):
+            msg = "Invalid DER: truncated length field"
+            raise ValueError(msg)
+        length = 0
+        for _ in range(num_length_bytes):
+            length = (length << 8) | data[offset]
+            offset += 1
+
+    if offset + length > len(data):
+        msg = "Invalid DER: length exceeds the available data"
+        raise ValueError(msg)
     return length, offset
 
 
@@ -199,7 +212,7 @@ def decode_der(der_data: bytes) -> bytes:
     _, offset = decode_length(der_data, offset)
 
     # Skip version INTEGER (should be 0)
-    if der_data[offset] != INTEGER_TAG:
+    if offset >= len(der_data) or der_data[offset] != INTEGER_TAG:
         msg = "Invalid DER: expected INTEGER tag for version"
         raise ValueError(msg)
     offset += 1
@@ -207,7 +220,7 @@ def decode_der(der_data: bytes) -> bytes:
     offset += version_len  # Skip version value
 
     # Validate algorithm identifier is for EC
-    if der_data[offset] != SEQUENCE_TAG:
+    if offset >= len(der_data) or der_data[offset] != SEQUENCE_TAG:
         msg = "Invalid DER: expected SEQUENCE tag for algorithm"
         raise ValueError(msg)
     offset += 1
@@ -216,7 +229,7 @@ def decode_der(der_data: bytes) -> bytes:
     alg_end = offset + alg_len  # Store the end position of algorithm identifier
 
     # Check if first OID is EC
-    if der_data[offset] != OBJECT_IDENTIFIER_TAG:
+    if offset >= len(der_data) or der_data[offset] != OBJECT_IDENTIFIER_TAG:
         msg = "Invalid DER: expected OBJECT IDENTIFIER tag"
         raise ValueError(msg)
     offset += 1
@@ -232,7 +245,7 @@ def decode_der(der_data: bytes) -> bytes:
     offset = alg_end
 
     # Extract private key octet string
-    if der_data[offset] != OCTET_STRING_TAG:
+    if offset >= len(der_data) or der_data[offset] != OCTET_STRING_TAG:
         msg = "Invalid DER: expected OCTET STRING for private key"
         raise ValueError(msg)
     offset += 1
@@ -251,7 +264,7 @@ def decode_der(der_data: bytes) -> bytes:
     _, ec_offset = decode_length(ec_data, ec_offset)
 
     # Skip version INTEGER (should be 1)
-    if ec_data[ec_offset] != INTEGER_TAG:
+    if ec_offset >= len(ec_data) or ec_data[ec_offset] != INTEGER_TAG:
         msg = "Invalid EC key format: missing version"
         raise ValueError(msg)
     ec_offset += 1
@@ -259,7 +272,7 @@ def decode_der(der_data: bytes) -> bytes:
     ec_offset += ec_ver_len  # Skip version value
 
     # Get private key octet string
-    if ec_data[ec_offset] != OCTET_STRING_TAG:
+    if ec_offset >= len(ec_data) or ec_data[ec_offset] != OCTET_STRING_TAG:
         msg = "Invalid DER: expected OCTET STRING for EC private key"
         raise ValueError(msg)
     ec_offset += 1
