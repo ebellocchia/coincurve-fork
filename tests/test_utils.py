@@ -30,6 +30,10 @@ class TestPadScalar:
     def test_empty_scalar(self):
         assert len(pad_scalar(b"")) == 32
 
+    def test_too_long(self):
+        with pytest.raises(ValueError, match=r"Scalar must be at most 32 bytes long\."):
+            pad_scalar(urandom(33))
+
 
 def test_get_valid_secret():
     secret = get_valid_secret()

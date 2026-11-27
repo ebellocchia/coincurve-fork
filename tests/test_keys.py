@@ -139,6 +139,13 @@ class TestPrivateKey:
     def test_add(self):
         assert PrivateKey(b"\x01").add(b"\x09").to_int() == 10
 
+    def test_scalar_too_long(self, samples):
+        # libsecp256k1 would silently use only the first 32 bytes
+        with pytest.raises(ValueError, match=r"Scalar must be at most 32 bytes long\."):
+            PrivateKey(b"\x00" + samples["PRIVATE_KEY_BYTES"])
+        with pytest.raises(ValueError, match=r"Scalar must be at most 32 bytes long\."):
+            PrivateKey(b"\x01").add(b"\x00" * 32 + b"\x01")
+
     def test_add_update(self):
         private_key = PrivateKey(b"\x01")
         new_private_key = private_key.add(b"\x09", update=True)
@@ -197,6 +204,10 @@ class TestPublicKey:
 
         assert point.add(k) == G.multiply(int_to_bytes_padded((bytes_to_int(x) + bytes_to_int(k)) % n))
 
+    def test_add_scalar_too_long(self):
+        with pytest.raises(ValueError, match=r"Scalar must be at most 32 bytes long\."):
+            G.add(b"\x00" * 32 + b"\x01")
+
     def test_combine(self):
         a = PrivateKey().public_key
         b = PrivateKey().public_key
@@ -237,6 +248,10 @@ class TestXonlyPubKey:
         pubkey = PublicKeyXOnly(bytes.fromhex("d6889cb081036e0faefa3a35157ad71086b123b2b144b649798b494c300a961d"))
         pubkey.tweak_add(bytes.fromhex("b86e7be8f39bab32a6f2c0443abbc210f0edac0e2c53d501b36b64437d9c6c70"))
         assert pubkey.format() == bytes.fromhex("53a1f6e454df1aa2776a2814a721372d6258050de330b3c6d10ee8f4e0dda343")
+
+    def test_tweak_scalar_too_long(self, samples):
+        with pytest.raises(ValueError, match=r"Scalar must be at most 32 bytes long\."):
+            PublicKeyXOnly(samples["X_ONLY_PUBKEY"]).tweak_add(b"\x00" * 32 + b"\x01")
 
     def test_parity(self):
         # Taken from BIP341 test vectors.

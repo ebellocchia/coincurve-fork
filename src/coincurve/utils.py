@@ -88,6 +88,10 @@ def get_valid_secret() -> bytes:
 
 
 def pad_scalar(scalar: bytes) -> bytes:
+    # Longer scalars would be silently truncated by libsecp256k1
+    if len(scalar) > KEY_SIZE:
+        msg = f"Scalar must be at most {KEY_SIZE} bytes long."
+        raise ValueError(msg)
     return (ZERO * (KEY_SIZE - len(scalar))) + scalar
 
 
